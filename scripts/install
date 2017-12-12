@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# Retrieve arguments
+domain=$1
+path=$2
+app=radicale
+
+
+
+# Vérifie que le dossier de destination n'est pas déjà utilisé.
+final_path=/home/$app
+app_path=/opt/yunohost/$app
+
+if [ -e "$final_path" ]
+then
+    echo "This path already contains a folder"
+    exit 1
+fi
+
+# Vérifie la présence du / en début de path
+if [ $(echo $path | cut -c1) != "/" ]; then
+    path="/$path"
+fi
+
+# Modifie le domaine pour qu'il passe dans une regex
+domain_regex=$(echo "$domain" | sed 's@-@.@g')
+
+
+# Enregistre les infos dans la config YunoHost
+sudo yunohost app setting $app domain -v $domain
+sudo yunohost app setting $app path -v $path
+
+
+# Crée le repertoire de destination et stocke son emplacement.
+sudo mkdir "$final_path"
+sudo yunohost app setting $app final_path -v $final_path
+
+
+
+# Check depends installation
+sudo apt-get install -y python3-pip python3-virtualenv python3-dev virtualenv
+# Init virtualenv
+sudo virtualenv -p python3 /opt/yunohost/$app
+sudo $app_path/bin/pip install 'radicale==2.1.8' ldap3
+sudo $app_path/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
+
+#Configuration Radicale
+sudo mkdir -p /etc/$app
+sudo cp ../conf/config /etc/$app/
+sudo cp ../conf/logging /etc/$app/
+
+sudo cp ../conf/logrotate /etc/logrotate.d/$app
+sudo cp ../conf/radicale.env /etc/$app/
+
+# sudo cp ../conf/rights /etc/$app/
+sudo sed -i "s@__APP_PATH__@$app_path@g" /etc/$app/radicale.env
+sudo sed -i "s@__PATH__@$path@g" /etc/$app/config
+sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/$app/config
+
+# Set permissions to radicale directory
+sudo useradd radicale -d $app_path
+sudo chown radicale: -R $app_path
+
+# Set permissions to radicale directory
+sudo chown -R radicale: $final_path
+sudo mkdir /var/log/$app
+sudo touch /var/log/$app/$app.log
+sudo chown radicale -R /var/log/$app
+
+# Modify Nginx configuration file and copy it to Nginx conf directory
+sudo sed -i "s@__PATH__@$path@g" ../conf/nginx.conf
+sudo sed -i "s@__FINALPATH__@$final_path@g" ../conf/radicale.service
+sudo sed -i "s@__APP_PATH__@$app_path@g" ../conf/radicale.service
+
+#Ajout du service radicale
+sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+sudo cp ../conf/radicale.service /etc/systemd/system/$app.service
+
+# Fix permission
+sudo chmod 755 /etc/$app/
+sudo find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
+sudo find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
+sudo chmod 644 /etc/$app/*
+
+
+#Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
+
+# Configuration de logrotate
+sed -i "s@__NAME__@$app@g" ../conf/logrotate
+sudo cp ../conf/logrotate /etc/logrotate.d/$app
+
+## Reload Nginx and regenerate SSOwat conf
+sudo service nginx reload
+
+# Configuration ssowat
+sudo yunohost app setting $app unprotected_uris -v "/"    # Radicale est accessible librement (pour l'accès distant aux ressources)
+
+sudo yunohost app ssowatconf
+
+
+#Ajout de service radicale
+sudo yunohost service add $app
+sudo systemctl enable $app
+sudo yunohost service start $app
+
+
+
+sudo sed -i "s@__FINALPATH__@$final_path@g" ../hooks/post_user_delete
+sudo yunohost hook add radicale ../hooks/post_user_delete

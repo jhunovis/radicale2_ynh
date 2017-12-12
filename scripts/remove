@@ -1,0 +1,36 @@
+#!/bin/bash
+
+app=radicale
+
+# Récupère les infos de l'application.
+domain=$(sudo yunohost app setting $app domain)
+
+# Suppression des dossiers de l'application
+sudo rm -Rf /opt/yunohost/$app
+sudo rm -Rf /home/$app/
+sudo rm -Rf /etc/$app/
+
+# Stoppe le service radciale
+# Et du suppression service dans Yunohost
+sudo yunohost service stop $app
+sudo yunohost service remove $app
+sudo systemctl disable $app
+# Suppression de la configuration nginx
+sudo rm -f /etc/nginx/conf.d/$domain.d/$app.conf
+sudo rm -f /etc/systemd/system/$app.service
+
+# Suppression de la configuration de logrotate
+sudo rm /etc/logrotate.d/$app
+sudo rm -fr /var/log/$app
+
+# Recharge la configuration Nginx
+sudo service nginx reload
+
+# Régénère la configuration de SSOwat
+sudo yunohost app ssowatconf
+
+# Supprime l'utilisateur radicale
+sudo userdel radicale
+
+# Retire le hook sur la création de nouveaux utilisateurs
+sudo yunohost hook remove radicale

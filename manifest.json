@@ -1,0 +1,37 @@
+{
+    "name": "Radicale",
+    "id": "radicale",
+    "description": {
+        "en": "CalDAV (calendar) and CardDAV (contact) synchronization server",
+        "fr": "Serveur de synchronisation CalDAV et CardDAV"
+    },
+	"version": "2.1.8",
+    "url": "http://radicale.org",
+    "licence": "free",
+    "maintainer": {
+        "name": "kitoy",
+        "email": "kitoy@kitoy.me"
+    },
+    "multi_instance": "false",
+    "arguments": {
+        "install" : [
+            {
+                "name": "domain",
+                "ask": {
+                    "en": "Choose a domain for Radicale",
+                    "fr": "Choisissez un domaine pour Radicale"
+                },
+                "example": "domain.org"
+            },
+            {
+                "name": "path",
+                "ask": {
+                    "en": "Choose a path for Radicale",
+                    "fr": "Choisissez un chemin pour Radicale"
+                },
+                "example": "/radicale",
+                "default": "/radicale"
+            }
+        ]
+    }
+}
