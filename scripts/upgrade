@@ -1,45 +1,67 @@
 #!/bin/bash
-app=radicale
 
-# Get app settings
-domain=$(sudo yunohost app setting $app domain)
-path=$(sudo yunohost app setting $app path)
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
+source /usr/share/yunohost/helpers
+
+#=================================================
+# LOAD SETTINGS
+#=================================================
+
+app=$YNH_APP_INSTANCE_NAME
+
+domain=$(ynh_app_setting_get $app domain)
+path_url=$(ynh_app_setting_get $app path)
+version=$(ynh_app_setting_get $app version)
+
+#=================================================
+# CHECK VERSION
+#=================================================
+
+ynh_abort_if_up_to_date
 
 
-# Check depends installation
-sudo apt-get install -y python3-pip python3-virtualenv python3-dev libldap2-dev libsasl2-dev libssl-dev
+if [ -z "$version" ]
+then
+	version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -f 1)	# Retrieve the version number in the manifest file.
+	ynh_app_setting_set $app version "$version"
+fi
 
-sudo chown radicale: -R /opt/yunohost/$app
+#=================================================
+# BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
+#=================================================
 
-# Upgrade pip packages
-sudo rm -Rf /opt/yunohost/$app
+# Backup the current version of the app
+ynh_backup_before_upgrade
+ynh_clean_setup () {
+	# restore it if the upgrade fails
+	ynh_restore_upgradebackup
+}
+# Exit if an error occurs during the execution of the script
+ynh_abort_if_errors
 
-sudo virtualenv -p python3 /opt/yunohost/$app
-sudo /opt/yunohost/$app/bin/pip install --upgrade radicale ldap3
-sudo /opt/yunohost/$app/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
 
+# Enregistre la somme de contrôle du fichier de config
+ynh_store_file_checksum "/etc/$app/config"
+ynh_store_file_checksum "/etc/$app/logging"
+ynh_store_file_checksum "/etc/$app/radicale.env"
 
-
-# Radicale configuration
-sudo cp ../conf/config /etc/$app/
-sudo cp ../conf/logging /etc/$app/
-
-sudo cp ../conf/logrotate /etc/logrotate.d/$app
-sudo cp ../conf/radicale.env /etc/$app/
-
-# sudo cp ../conf/rights /etc/$app/
-sudo sed -i "s@__APP_PATH__@/opt/yunohost/$app@g" /etc/$app/radicale.env
-sudo sed -i "s@__PATH__@$path@g" /etc/$app/config
-sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/$app/config
+# Set permissions to radicale directory
+sudo chown radicale: -R $app_path
 
 # Set permissions to radicale directory
 sudo chown -R radicale: $final_path
+sudo mkdir /var/log/$app
+sudo touch /var/log/$app/$app.log
 sudo chown radicale -R /var/log/$app
 
-# Modify Nginx configuration file and copy it to Nginx conf directory
-sudo sed -i "s@__PATH__@$path@g" ../conf/nginx.conf
-sudo sed -i "s@__FINALPATH__@$final_path@g" ../conf/radicale.service
-sudo sed -i "s@__APP_PATH__@/opt/yunohost/$app@g" ../conf/radicale.service
+ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
+
 
 #Ajout du service radicale
 sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
@@ -51,11 +73,40 @@ sudo find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
 sudo find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
 sudo chmod 644 /etc/$app/*
 
-sudo yunohost app setting $app unprotected_uris -v "/"	# Radicale est accessible librement (pour l'accès distant aux ressources)
+
+#Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
+#=================================================
+# SETUP LOGROTATE
+#=================================================
+
+ynh_use_logrotate
+
+## Reload Nginx and regenerate SSOwat conf
+sudo service nginx reload
+
+# Configuration ssowat
+sudo yunohost app setting $app unprotected_uris -v "/"    # Radicale est accessible librement (pour l'accès distant aux ressources)
 
 sudo yunohost app ssowatconf
-sudo systemctl restart $app
-sudo systemctl nginx reload
 
-sudo sed -i "s@__FINALPATH__@$final_path@g" ../hooks/post_user_delete
-sudo yunohost hook add radicale ../hooks/post_user_delete
+
+
+
+#============================================
+# Systemd
+#============================================
+
+ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.service
+ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
+
+#Ajout de service radicale
+sudo yunohost service add $app
+sudo systemctl enable $app
+sudo yunohost service start $app
+
+#=================================================
+# PREPARE THE HOOKS
+#=================================================
+
+# Modification des hook pour la création des collections par défaut des nouveaux utilisateurs. Et leur suppression
+ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete

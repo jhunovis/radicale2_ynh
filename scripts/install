@@ -1,48 +1,109 @@
 #!/bin/bash
 
-# Retrieve arguments
-domain=$1
-path=$2
-app=radicale
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
+
+source _common.sh
+source /usr/share/yunohost/helpers
+# Load common variables for all scripts.
+source _variables
+
+#=================================================
+# MANAGE FAILURE OF THE SCRIPT
+#=================================================
+
+ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
 
 
+#=================================================
+# RETRIEVE ARGUMENTS FROM THE MANIFEST
+#=================================================
+
+domain=$YNH_APP_ARG_DOMAIN
+path_url=$YNH_APP_ARG_PATH
+
+app=$YNH_APP_INSTANCE_NAME
+
+version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -f 1)	# Retrieve the version number in the manifest file.
+
+#=================================================
+# CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
+#=================================================
 
 # Vérifie que le dossier de destination n'est pas déjà utilisé.
 final_path=/home/$app
+test ! -e "$final_path" || ynh_die "This path already contains a folder"
+
 app_path=/opt/yunohost/$app
 
-if [ -e "$final_path" ]
-then
-    echo "This path already contains a folder"
-    exit 1
-fi
+# Normalize the url path syntax
+path_url=$(ynh_normalize_url_path $path_url)
 
-# Vérifie la présence du / en début de path
-if [ $(echo $path | cut -c1) != "/" ]; then
-    path="/$path"
-fi
+# Check web path availability
+ynh_webpath_available $domain $path_url
+# Register (book) web path
+ynh_webpath_register $app $domain $path_url
 
-# Modifie le domaine pour qu'il passe dans une regex
-domain_regex=$(echo "$domain" | sed 's@-@.@g')
+#=================================================
+# STORE SETTINGS FROM MANIFEST
+#=================================================
 
 
-# Enregistre les infos dans la config YunoHost
-sudo yunohost app setting $app domain -v $domain
-sudo yunohost app setting $app path -v $path
+ynh_app_setting_set $app domain $domain
+ynh_app_setting_set $app path $path_url
+ynh_app_setting_set $app version $version
 
 
-# Crée le repertoire de destination et stocke son emplacement.
-sudo mkdir "$final_path"
-sudo yunohost app setting $app final_path -v $final_path
+#=================================================
+# STANDARD MODIFICATIONS
+#=================================================
+# INSTALL DEPENDENCIES
+#=================================================
+
+ynh_install_app_dependencies $app_depencencies
+
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
+# Modify Nginx configuration file and copy it to Nginx conf directory
+#sudo sed -i "s@__PATH__@$path@g" ../conf/nginx.conf
 
 
+ynh_add_nginx_config
+ynh_store_file_checksum "$finalnginxconf"
 
-# Check depends installation
-sudo apt-get install -y python3-pip python3-virtualenv python3-dev virtualenv
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+
+ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
+
+#=================================================
+# SPECIFIC SETUP
+#=================================================
+# INSTALL RADICALE IN A VIRTUALENV
+#=================================================
+
 # Init virtualenv
 sudo virtualenv -p python3 /opt/yunohost/$app
 sudo $app_path/bin/pip install 'radicale==2.1.8' ldap3
 sudo $app_path/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
+
+#=================================================
+# COPY FILES INTO $FINAL_PATH
+#=================================================
+
+# Crée le repertoire de destination et stocke son emplacement.
+mkdir "$final_path"
+ynh_app_setting_set $app final_path $final_path
+
+#=================================================
+# CONFIGURE RADICALE
+#=================================================
+
 
 #Configuration Radicale
 sudo mkdir -p /etc/$app
@@ -52,13 +113,17 @@ sudo cp ../conf/logging /etc/$app/
 sudo cp ../conf/logrotate /etc/logrotate.d/$app
 sudo cp ../conf/radicale.env /etc/$app/
 
-# sudo cp ../conf/rights /etc/$app/
-sudo sed -i "s@__APP_PATH__@$app_path@g" /etc/$app/radicale.env
-sudo sed -i "s@__PATH__@$path@g" /etc/$app/config
-sudo sed -i "s@__FINALPATH__@$final_path@g" /etc/$app/config
+
+ynh_replace_string "__APP_PATH__" "$app_path" /etc/$app/radicale.env
+ynh_replace_string "__PATH__" "${path_url%/}" /etc/$app/config
+ynh_replace_string "__FINALPATH__" "$final_path" /etc/$app/config
+
+# Enregistre la somme de contrôle du fichier de config
+ynh_store_file_checksum "/etc/$app/config"
+ynh_store_file_checksum "/etc/$app/logging"
+ynh_store_file_checksum "/etc/$app/radicale.env"
 
 # Set permissions to radicale directory
-sudo useradd radicale -d $app_path
 sudo chown radicale: -R $app_path
 
 # Set permissions to radicale directory
@@ -67,14 +132,18 @@ sudo mkdir /var/log/$app
 sudo touch /var/log/$app/$app.log
 sudo chown radicale -R /var/log/$app
 
-# Modify Nginx configuration file and copy it to Nginx conf directory
-sudo sed -i "s@__PATH__@$path@g" ../conf/nginx.conf
-sudo sed -i "s@__FINALPATH__@$final_path@g" ../conf/radicale.service
-sudo sed -i "s@__APP_PATH__@$app_path@g" ../conf/radicale.service
+ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
 
 #Ajout du service radicale
+
+#ynh_replace_string "__FINALPATH__" "$final_path" ../conf/radicale.service
+#ynh_replace_string "__APP_PATH__" "$app_path" ../conf/radicale.service
+
 sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
 sudo cp ../conf/radicale.service /etc/systemd/system/$app.service
+
+ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
+ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.service
 
 # Fix permission
 sudo chmod 755 /etc/$app/
@@ -84,10 +153,11 @@ sudo chmod 644 /etc/$app/*
 
 
 #Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
+#=================================================
+# SETUP LOGROTATE
+#=================================================
 
-# Configuration de logrotate
-sed -i "s@__NAME__@$app@g" ../conf/logrotate
-sudo cp ../conf/logrotate /etc/logrotate.d/$app
+ynh_use_logrotate
 
 ## Reload Nginx and regenerate SSOwat conf
 sudo service nginx reload
@@ -104,6 +174,20 @@ sudo systemctl enable $app
 sudo yunohost service start $app
 
 
+#============================================
+# Systemd
+#============================================
+#sudo sed -i "s@__FINALPATH__@$final_path@g" ../conf/radicale.service
+#sudo sed -i "s@__APP_PATH__@$app_path@g" ../conf/radicale.service
+#ynh_replace_string "__FINALPATH__" "$final_path" ../conf/radicale.service
+#ynh_replace_string "__APP_PATH__" "$app_path" ../conf/radicale.service
 
-sudo sed -i "s@__FINALPATH__@$final_path@g" ../hooks/post_user_delete
-sudo yunohost hook add radicale ../hooks/post_user_delete
+#=================================================
+# PREPARE THE HOOKS
+#=================================================
+
+# Modification des hook pour la création des collections par défaut des nouveaux utilisateurs. Et leur suppression
+ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
+
+#sudo sed -i "s@__FINALPATH__@$final_path@g" ../hooks/post_user_delete
+#sudo yunohost hook add radicale ../hooks/post_user_delete

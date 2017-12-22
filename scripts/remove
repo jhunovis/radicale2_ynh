@@ -1,36 +1,77 @@
 #!/bin/bash
 
-app=radicale
+#=================================================
+# GENERIC STARTING
+#=================================================
+# IMPORT GENERIC HELPERS
+#=================================================
 
-# Récupère les infos de l'application.
-domain=$(sudo yunohost app setting $app domain)
+source _common.sh
+source /usr/share/yunohost/helpers
 
-# Suppression des dossiers de l'application
-sudo rm -Rf /opt/yunohost/$app
-sudo rm -Rf /home/$app/
-sudo rm -Rf /etc/$app/
+#=================================================
+# LOAD SETTINGS
+#=================================================
 
-# Stoppe le service radciale
-# Et du suppression service dans Yunohost
+app=$YNH_APP_INSTANCE_NAME
+
+domain=$(ynh_app_setting_get $app domain)
+
+
+# Stop service radciale
+# And delete service in Yunohost
 sudo yunohost service stop $app
 sudo yunohost service remove $app
 sudo systemctl disable $app
-# Suppression de la configuration nginx
-sudo rm -f /etc/nginx/conf.d/$domain.d/$app.conf
-sudo rm -f /etc/systemd/system/$app.service
 
-# Suppression de la configuration de logrotate
-sudo rm /etc/logrotate.d/$app
-sudo rm -fr /var/log/$app
 
-# Recharge la configuration Nginx
-sudo service nginx reload
 
-# Régénère la configuration de SSOwat
-sudo yunohost app ssowatconf
+if [ -h "/etc/systemd/system/$app.service" ]; then
+	echo "Delete systemd unit"
+	ynh_secure_remove "etc/systemd/system/$app.service"
+fi
 
-# Supprime l'utilisateur radicale
-sudo userdel radicale
+rm -fr /var/log/$app
 
-# Retire le hook sur la création de nouveaux utilisateurs
-sudo yunohost hook remove radicale
+#=================================================
+# REMOVE DEPENDENCIES
+#=================================================
+
+ynh_remove_app_dependencies
+
+#=================================================
+# REMOVE THE MAIN DIR OF THE APP
+#=================================================
+
+ynh_secure_remove "/opt/yunohost/$app"	# Suppression du dossier de l'application
+ynh_secure_remove "/home/$app"
+
+#=================================================
+# REMOVE THE NGINX CONFIGURATION
+#=================================================
+
+ynh_remove_nginx_config	# Suppression de la configuration nginx
+
+#=================================================
+# REMOVE THE LOGROTATE CONFIG
+#=================================================
+
+ynh_remove_logrotate	# Suppression de la configuration de logrotate
+
+#=================================================
+# SPECIFIC REMOVE
+#=================================================
+# REMOVE RADICALE'S CONFIG
+#=================================================
+
+ynh_secure_remove "/etc/$app"	# Delete radicale config
+
+#=================================================
+
+#=================================================
+# GENERIC FINALISATION
+#=================================================
+# REMOVE DEDICATED USER
+#=================================================
+
+ynh_system_user_delete $app
