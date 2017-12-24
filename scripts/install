@@ -152,6 +152,7 @@ ynh_use_logrotate
 ## Reload Nginx and regenerate SSOwat conf
 sudo service nginx reload
 
+
 # Configuration ssowat
 sudo yunohost app setting $app unprotected_uris -v "/"    # Radicale est accessible librement (pour l'accès distant aux ressources)
 
