@@ -16,6 +16,7 @@ ProtectSystem=strict
 PrivateDevices=true
 #NoNewPrivileges=true
 ReadWritePaths=__FINALPATH__
+ReadWritePaths=/var/log/radicale
 
 [Install]
 WantedBy=multi-user.target
