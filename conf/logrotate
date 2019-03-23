@@ -1,8 +1,6 @@
 /var/log/__NAME__/__NAME__.log {
 		# Effectue une rotation des logs tout les mois
 	monthly
-		# Ou si le fichier de log dépasse 100Mo
-	size 10M
 		# Garde un maximum de 12 anciens logs
 	rotate 12
 		# Compresse pas les logs avec gzip

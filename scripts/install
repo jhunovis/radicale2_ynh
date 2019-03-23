@@ -33,7 +33,6 @@ version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -
 # CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
 #=================================================
 
-# Vérifie que le dossier de destination n'est pas déjà utilisé.
 final_path=/home/$app
 test ! -e "$final_path" || ynh_die "This path already contains a folder"
 
@@ -84,7 +83,7 @@ ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 #=================================================
 # Init virtualenv
 sudo virtualenv -p python3 /opt/yunohost/$app
-sudo $app_path/bin/pip install 'radicale==2.1.8' ldap3
+sudo $app_path/bin/pip install 'radicale==2.1.10' ldap3
 sudo $app_path/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
 
 #=================================================
@@ -133,7 +132,7 @@ sudo cp ../conf/radicale.service /etc/systemd/system/$app.service
 
 ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
 ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.service
-
+ynh_replace_string "__NAME__" "$app" /etc/logrotate.d/radicale
 # Fix permission
 sudo chmod 755 /etc/$app/
 sudo find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
@@ -141,25 +140,23 @@ sudo find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
 sudo chmod 644 /etc/$app/*
 
 
-# Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse
-# et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
+# since radicale 2.0 user can create calendar and address books in web interface
 #=================================================
 # SETUP LOGROTATE
 #=================================================
 
-ynh_use_logrotate
-
+#ynh_use_logrotate
 ## Reload Nginx and regenerate SSOwat conf
 sudo service nginx reload
 
 
 # Configuration ssowat
-sudo yunohost app setting $app unprotected_uris -v "/"    # Radicale est accessible librement (pour l'accès distant aux ressources)
+sudo yunohost app setting $app unprotected_uris -v "/"    
 
 sudo yunohost app ssowatconf
 
 
-#Ajout de service radicale
+#Add service radicale
 sudo yunohost service add $app
 sudo systemctl enable $app
 sudo yunohost service start $app
