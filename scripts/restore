@@ -5,23 +5,23 @@ app=radicale
 final_path=$(sudo yunohost app setting $app final_path)
 domain=$(sudo yunohost app setting $app domain)
 
-
+ynh_abort_if_errors
 # The parameter $1 is the uncompressed restore directory location
 backup_dir=$1/apps/$app
 
 # Restore sources & data
-sudo cp -a $backup_dir/sources/. $final_path
-
+cp -a $backup_dir/sources/. $final_path
+cp -a $backup_dir/data/. /home/$app
 # Restore Nginx and YunoHost parameters
-sudo cp -a $backup_dir/yunohost/. /etc/yunohost/apps/$app
-sudo cp -a $backup_dir/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+cp -a $backup_dir/yunohost/. /etc/yunohost/apps/$app
+cp -a $backup_dir/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
 
 # Restore radicale configuration
-sudo cp -a $backup_dir/etc/. /etc/$app
+cp -a $backup_dir/etc/. /etc/$app
 
 
 # Restaure la configuration de logrotate
-sudo cp -a $backup_dir/logrotate /etc/logrotate.d/$app
+cp -a $backup_dir/logrotate /etc/logrotate.d/$app
 
 # Restart webserver
-sudo service nginx reload
+service nginx reload

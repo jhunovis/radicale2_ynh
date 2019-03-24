@@ -38,6 +38,7 @@ fi
 
 # Backup the current version of the app
 ynh_backup_before_upgrade
+
 ynh_clean_setup () {
 	# restore it if the upgrade fails
 	ynh_restore_upgradebackup
@@ -52,26 +53,26 @@ ynh_store_file_checksum "/etc/$app/logging"
 ynh_store_file_checksum "/etc/$app/radicale.env"
 
 # Set permissions to radicale directory
-sudo chown radicale: -R $app_path
+chown radicale: -R $app_path
 
 # Set permissions to radicale directory
-sudo chown -R radicale: $final_path
-sudo mkdir /var/log/$app
-sudo touch /var/log/$app/$app.log
-sudo chown radicale -R /var/log/$app
+chown -R radicale: $final_path
+mkdir /var/log/$app
+touch /var/log/$app/$app.log
+chown radicale -R /var/log/$app
 
 ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
 
 
 #Ajout du service radicale
-sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
-sudo cp ../conf/radicale.service /etc/systemd/system/$app.service
+cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+cp ../conf/radicale.service /etc/systemd/system/$app.service
 
 # Fix permission
-sudo chmod 755 /etc/$app/
-sudo find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
-sudo find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
-sudo chmod 644 /etc/$app/*
+chmod 755 /etc/$app/
+find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
+find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
+chmod 644 /etc/$app/*
 
 
 #Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
@@ -82,12 +83,12 @@ sudo chmod 644 /etc/$app/*
 ynh_use_logrotate
 
 ## Reload Nginx and regenerate SSOwat conf
-sudo service nginx reload
+service nginx reload
 
 # Configuration ssowat
-sudo yunohost app setting $app unprotected_uris -v "/" 
+ynh_app_setting_set $app unprotected_uris -v  
 
-sudo yunohost app ssowatconf
+yunohost app ssowatconf
 
 
 
@@ -100,9 +101,9 @@ ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.servic
 ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
 
 #Ajout de service radicale
-sudo yunohost service add $app
-sudo systemctl enable $app
-sudo yunohost service start $app
+yunohost service add $app
+systemctl enable $app
+yunohost service start $app
 
 #=================================================
 # PREPARE THE HOOKS

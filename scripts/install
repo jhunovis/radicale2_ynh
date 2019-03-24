@@ -82,9 +82,9 @@ ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 # INSTALL RADICALE IN A VIRTUALENV
 #=================================================
 # Init virtualenv
-sudo virtualenv -p python3 /opt/yunohost/$app
-sudo $app_path/bin/pip install 'radicale==2.1.10' ldap3
-sudo $app_path/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
+virtualenv -p python3 /opt/yunohost/$app
+$app_path/bin/pip install 'radicale==2.1.10' ldap3
+$app_path/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
 
 #=================================================
 # COPY FILES INTO $FINAL_PATH
@@ -97,12 +97,12 @@ ynh_app_setting_set $app final_path $final_path
 # CONFIGURE RADICALE
 #=================================================
 #Configuration Radicale
-sudo mkdir -p /etc/$app
-sudo cp ../conf/config /etc/$app/
-sudo cp ../conf/logging /etc/$app/
+mkdir -p /etc/$app
+cp ../conf/config /etc/$app/
+cp ../conf/logging /etc/$app/
 
-sudo cp ../conf/logrotate /etc/logrotate.d/$app
-sudo cp ../conf/radicale.env /etc/$app/
+cp ../conf/logrotate /etc/logrotate.d/$app
+cp ../conf/radicale.env /etc/$app/
 
 
 ynh_replace_string "__APP_PATH__" "$app_path" /etc/$app/radicale.env
@@ -118,26 +118,26 @@ ynh_store_file_checksum "/etc/$app/radicale.env"
 sudo chown radicale: -R $app_path
 
 # Set permissions to radicale directory
-sudo chown -R radicale: $final_path
-sudo mkdir /var/log/$app
-sudo touch /var/log/$app/$app.log
-sudo chown radicale -R /var/log/$app
+chown -R radicale: $final_path
+mkdir /var/log/$app
+touch /var/log/$app/$app.log
+chown radicale -R /var/log/$app
 
 ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
 
 #Ajout du service radicale
 
-sudo cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
-sudo cp ../conf/radicale.service /etc/systemd/system/$app.service
+cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
+cp ../conf/radicale.service /etc/systemd/system/$app.service
 
 ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
 ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.service
 ynh_replace_string "__NAME__" "$app" /etc/logrotate.d/radicale
 # Fix permission
-sudo chmod 755 /etc/$app/
-sudo find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
-sudo find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
-sudo chmod 644 /etc/$app/*
+chmod 755 /etc/$app/
+find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
+find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
+chmod 644 /etc/$app/*
 
 
 # since radicale 2.0 user can create calendar and address books in web interface
@@ -147,19 +147,19 @@ sudo chmod 644 /etc/$app/*
 
 #ynh_use_logrotate
 ## Reload Nginx and regenerate SSOwat conf
-sudo service nginx reload
+service nginx reload
 
 
 # Configuration ssowat
-sudo yunohost app setting $app unprotected_uris -v "/"    
+ynh_app_setting_set $app unprotected_uris -v     
 
-sudo yunohost app ssowatconf
+yunohost app ssowatconf
 
 
 #Add service radicale
-sudo yunohost service add $app
-sudo systemctl enable $app
-sudo yunohost service start $app
+yunohost service add $app
+systemctl enable $app
+yunohost service start $app
 
 
 #=================================================
