@@ -151,7 +151,7 @@ service nginx reload
 
 
 # Configuration ssowat
-ynh_app_setting_set $app unprotected_uris -v     
+ynh_app_setting_set $app unprotected_uris "/"    
 
 yunohost app ssowatconf
 

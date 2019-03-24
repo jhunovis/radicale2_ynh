@@ -75,18 +75,30 @@ find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
 chmod 644 /etc/$app/*
 
 
-#Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
-#=================================================
-# SETUP LOGROTATE
-#=================================================
 
-ynh_use_logrotate
+if [ $is_public -eq 0 ]
+then
+	ynh_app_setting_delete $app skipped_uris
+fi
+
+
+#Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
 
 ## Reload Nginx and regenerate SSOwat conf
 service nginx reload
 
 # Configuration ssowat
-ynh_app_setting_set $app unprotected_uris -v  
+ynh_print_info "Configuring SSOwat..."
+
+# Make app public if necessary
+if [ $is_public -eq 1 ]
+then
+# unprotected_uris allows SSO credentials to be passed anyway.
+	ynh_app_setting_set $app unprotected_uris "/"
+fi
+
+
+
 
 yunohost app ssowatconf
 
