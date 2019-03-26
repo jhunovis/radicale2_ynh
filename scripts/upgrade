@@ -17,14 +17,34 @@ app=$YNH_APP_INSTANCE_NAME
 
 domain=$(ynh_app_setting_get $app domain)
 path_url=$(ynh_app_setting_get $app path)
+is_public=$(ynh_app_setting_get $app is_public)
+final_path=$(ynh_app_setting_get $app final_path)
+data_user=$(ynh_app_setting_get $app data_user)
 version=$(ynh_app_setting_get $app version)
+
+#=================================================
+# ENSURE DOWNWARD COMPATIBILITY
+#=================================================
+ynh_print_info "Ensuring downward compatibilty..."
+
+# Fix is_public as a boolean value
+if [ "$is_public" = "Yes" ]; then
+	ynh_app_setting_set $app is_public 1
+	is_public=1
+elif [ "is_public" = "No" ]; then
+	ynh_app_setting_set $app is_public 0
+	is_public=0
+fi
+
+# if final_path doesn't exist, create it
+if [ -z $final_path ]; then
+	final_path=/opt/yunohost/$app
+	ynh_app_setting_set $app final_path $final_path
+fi
 
 #=================================================
 # CHECK VERSION
 #=================================================
-
-ynh_abort_if_up_to_date
-
 
 if [ -z "$version" ]
 then
@@ -32,13 +52,14 @@ then
 	ynh_app_setting_set $app version "$version"
 fi
 
+
 #=================================================
 # BACKUP BEFORE UPGRADE THEN ACTIVE TRAP
 #=================================================
+ynh_print_info "Backing up the app before upgrading..."
 
 # Backup the current version of the app
 ynh_backup_before_upgrade
-
 ynh_clean_setup () {
 	# restore it if the upgrade fails
 	ynh_restore_upgradebackup
@@ -46,80 +67,108 @@ ynh_clean_setup () {
 # Exit if an error occurs during the execution of the script
 ynh_abort_if_errors
 
+#=================================================
+# CHECK THE PATH
+#=================================================
 
-# Enregistre la somme de contrôle du fichier de config
+path_url=$(ynh_normalize_url_path $path_url)
+
+#=================================================
+# STANDARD UPAGRADE STEPS
+#=================================================
+# UPGRADE PACKAGE RADICALE
+#=================================================
+ynh_print_info "Stopping $app service ..."
+yunohost service stop radicale
+
+ynh_print_info "Upgrading package $app..."
+$final_path/bin/pip3 install --upgrade radicale==$version 
+
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
+ynh_print_info "Uprading nginx web server configuration..."
+
+ynh_add_nginx_config
+
+#=================================================
+# UPGRADE DEPENDENCIES
+#=================================================
+ynh_print_info "Upgrading dependencies..."
+
+ynh_install_app_dependencies $pkg_dependencies
+
+#=================================================
+# CREATE DEDICATED USER
+#=================================================
+ynh_print_info "Making sure dedicated system user exist..."
+
+ynh_system_user_create $app
+
+
+#=================================================
+# UPDATE CONFIGURATION
+#=================================================
+ynh_backup_if_checksum_is_different "/etc/$app/config"
 ynh_store_file_checksum "/etc/$app/config"
-ynh_store_file_checksum "/etc/$app/logging"
+
+ynh_backup_if_checksum_is_different "/etc/$app/logging"
+ynh_store_file_checksum "/etc/$app/lggging"
+
+ynh_backup_if_checksum_is_different "/etc/$app/radicale.env"
 ynh_store_file_checksum "/etc/$app/radicale.env"
 
-# Set permissions to radicale directory
-chown radicale: -R $app_path
-
-# Set permissions to radicale directory
-chown -R radicale: $final_path
-mkdir /var/log/$app
-touch /var/log/$app/$app.log
-chown radicale -R /var/log/$app
-
-ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
+ynh_replace_string "__FINAL_PATH__" "$final_path" ../hooks/post_user_delete
 
 
-#Ajout du service radicale
-cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
-cp ../conf/radicale.service /etc/systemd/system/$app.service
-
-# Fix permission
-chmod 755 /etc/$app/
-find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
-find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
-chmod 644 /etc/$app/*
+#=================================================
+# SETUP LOGROTATE
+#=================================================
+ynh_print_info "Upgrading logrotate configuration"
+cp ../conf/logrotate /etc/logrotate.d/$app
 
 
+#=================================================
+# SETUP SYSTEMD
+#=================================================
+ynh_print_info "Upgrading systemd confguration ..."
+ynh_add_systemd_config
+ynh_replace_string "__FINAL_PATH__" "$final_path" /etc/systemd/system/$app.service
 
-if [ $is_public -eq 0 ]
-then
-	ynh_app_setting_delete $app skipped_uris
-fi
-
-
-#Depuis radicale 2.0 chaque utilisateurs se créé son carnet d'adresse et ses calendriers depuis l'interface web accessible depuis /radicale/.web.
-
-## Reload Nginx and regenerate SSOwat conf
-service nginx reload
-
-# Configuration ssowat
-ynh_print_info "Configuring SSOwat..."
-
-# Make app public if necessary
-if [ $is_public -eq 1 ]
-then
-# unprotected_uris allows SSO credentials to be passed anyway.
-	ynh_app_setting_set $app unprotected_uris "/"
-fi
-
-
-
-
-yunohost app ssowatconf
-
-
-
-
-#============================================
-# Systemd
-#============================================
-
-ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.service
-ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
-
-#Ajout de service radicale
-yunohost service add $app
-systemctl enable $app
-yunohost service start $app
+#=================================================
+# SECURE FILES AND DIRECTORIES
+#=================================================
+chown -R root: $final_path
 
 #=================================================
 # PREPARE THE HOOKS
 #=================================================
 
 # Modification des hook pour la création des collections par défaut des nouveaux utilisateurs. Et leur suppression
-ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
+ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_user_delete
+ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_create_user
+ynh_replace_string "__APP__" "$app" ../hooks/post_create_user
+
+#=================================================
+# SETUP SSOWAT
+#=================================================
+ynh_print_info "Upgrading SSOwat configuration..."
+
+#Make app public if necessary
+if [ $is_public -eq 1 ]
+then
+	ynh_app_setting_set $app unprotected_uris "/"
+fi
+
+#=================================================
+# RELOAD NGINX AND RESTART SERVICE
+#=================================================
+ynh_print_info "Starting $app service..."
+yunohost service start $app
+
+ynh_print_info "Reloading nginx web server ..."
+systemctl reload nginx
+
+ynh_print_info "Upgrade of $app completed"
+
+

@@ -8,12 +8,13 @@
 
 source _common.sh
 source /usr/share/yunohost/helpers
-# Load common variables for all scripts.
-source _variables
 
 #=================================================
 # MANAGE FAILURE OF THE SCRIPT
 #=================================================
+ynh_clean_setup () {
+	true
+}
 
 ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
 
@@ -24,7 +25,7 @@ ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est dét
 
 domain=$YNH_APP_ARG_DOMAIN
 path_url=$YNH_APP_ARG_PATH
-
+is_public=$YNH_APP_ARG_IS_PUBLIC
 app=$YNH_APP_INSTANCE_NAME
 
 version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -f 1)	# Retrieve the version number in the manifest file.
@@ -32,48 +33,44 @@ version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
 #=================================================
+ynh_print_info "Validating installation parameters ..."
+data_user=/home/$app
+test ! -e "$data_user" || ynh_die "This path already contains a folder"
 
-final_path=/home/$app
-test ! -e "$final_path" || ynh_die "This path already contains a folder"
+final_path=/opt/yunohost/$app
+test ! -e "$final_path" || ynh_die "This path exist, $app is already intalled ? "
 
-app_path=/opt/yunohost/$app
 
 # Normalize the url path syntax
 path_url=$(ynh_normalize_url_path $path_url)
 
-# Check web path availability
-ynh_webpath_available $domain $path_url
 # Register (book) web path
 ynh_webpath_register $app $domain $path_url
 
 #=================================================
+# STANDARD MODIFICATIONS
+#=================================================
 # STORE SETTINGS FROM MANIFEST
 #=================================================
+ynh_print_info "Storing installation settings..."
 
 ynh_app_setting_set $app domain $domain
 ynh_app_setting_set $app path $path_url
+ynh_app_setting_set $app is_public $is_public
 ynh_app_setting_set $app version $version
 
 
 #=================================================
-# STANDARD MODIFICATIONS
-#=================================================
 # INSTALL DEPENDENCIES
 #=================================================
+ynh_print_info "Installing dependencies..."
+ynh_install_app_dependencies $pkg_dependencies
 
-ynh_install_app_dependencies $app_depencencies
-
-#=================================================
-# NGINX CONFIGURATION
-#=================================================
-# Modify Nginx configuration file and copy it to Nginx conf directory
-
-ynh_add_nginx_config
-ynh_store_file_checksum "$finalnginxconf"
 
 #=================================================
 # CREATE DEDICATED USER
 #=================================================
+ynh_print_info "Configuring a system user..."
 ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 
 #=================================================
@@ -82,17 +79,18 @@ ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 # INSTALL RADICALE IN A VIRTUALENV
 #=================================================
 # Init virtualenv
-virtualenv -p python3 /opt/yunohost/$app
-$app_path/bin/pip install 'radicale==2.1.10' ldap3
-$app_path/bin/pip install ../sources/ajouts_radicale/ynh_ldap_auth/
+ynh_print_info "Setting up source file ..."
 
-#=================================================
-# COPY FILES INTO $FINAL_PATH
-#=================================================
-# Crée le repertoire de destination et stocke son emplacement.
-mkdir "$final_path"
+virtualenv -p python3 $final_path
+
+$final_path/bin/pip3 install 'radicale==2.1.10' ldap3
+$final_path/bin/pip3 install ../sources/ajouts_radicale/ynh_ldap_auth/
+
 ynh_app_setting_set $app final_path $final_path
 
+mkdir $data_user
+chown -R $app: $data_user
+ynh_app_setting_set $app data_user $data_user
 #=================================================
 # CONFIGURE RADICALE
 #=================================================
@@ -101,13 +99,12 @@ mkdir -p /etc/$app
 cp ../conf/config /etc/$app/
 cp ../conf/logging /etc/$app/
 
-cp ../conf/logrotate /etc/logrotate.d/$app
 cp ../conf/radicale.env /etc/$app/
 
 
-ynh_replace_string "__APP_PATH__" "$app_path" /etc/$app/radicale.env
+ynh_replace_string "__FINAL_PATH__" "$final_path" /etc/$app/radicale.env
 ynh_replace_string "__PATH__" "${path_url%/}" /etc/$app/config
-ynh_replace_string "__FINALPATH__" "$final_path" /etc/$app/config
+ynh_replace_string "__DATA_USER__" "$data_user" /etc/$app/config
 
 # Enregistre la somme de contrôle du fichier de config
 ynh_store_file_checksum "/etc/$app/config"
@@ -115,24 +112,31 @@ ynh_store_file_checksum "/etc/$app/logging"
 ynh_store_file_checksum "/etc/$app/radicale.env"
 
 # Set permissions to radicale directory
-sudo chown radicale: -R $app_path
+chown root: -R $final_path
 
 # Set permissions to radicale directory
-chown -R radicale: $final_path
 mkdir /var/log/$app
 touch /var/log/$app/$app.log
-chown radicale -R /var/log/$app
+chown $app: -R /var/log/$app
 
-ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
+#=================================================
+# SETUP SYSTEMD
+#=================================================
+ynh_print_info "Configuring a systemd service..."
+ynh_add_systemd_config
+ynh_replace_string "__FINAL_PATH__" "$final_path" /etc/systemd/system/$app.service
+ynh_replace_string "__DATA_USER__" "$data_user" /etc/systemd/system/$app.service
+ynh_store_file_checksum /etc/systemd/system/$app.service
 
-#Ajout du service radicale
+#=================================================
+# NGINX CONFIGURATION
+#=================================================
+# Modify Nginx configuration file and copy it to Nginx conf directory
+ynh_print_info "Configuring nginx web server..."
+ynh_add_nginx_config
 
-cp ../conf/nginx.conf /etc/nginx/conf.d/$domain.d/$app.conf
-cp ../conf/radicale.service /etc/systemd/system/$app.service
+ynh_store_file_checksum "$finalnginxconf"
 
-ynh_replace_string "__APP_PATH__" "$app_path" /etc/systemd/system/$app.service
-ynh_replace_string "__FINALPATH__" "$final_path" /etc/systemd/system/$app.service
-ynh_replace_string "__NAME__" "$app" /etc/logrotate.d/radicale
 # Fix permission
 chmod 755 /etc/$app/
 find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
@@ -140,31 +144,42 @@ find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
 chmod 644 /etc/$app/*
 
 
-# since radicale 2.0 user can create calendar and address books in web interface
 #=================================================
 # SETUP LOGROTATE
 #=================================================
 
-#ynh_use_logrotate
-## Reload Nginx and regenerate SSOwat conf
-service nginx reload
+ynh_print_info "Configuring log rotation..."
+cp ../conf/logrotate /etc/logrotate.d/$app
+ynh_replace_string "__NAME__" "$app" /etc/logrotate.d/$app
+ynh_store_file_checksum "/etc/logrotate.d/$app"
 
+yunohost service add $app --log "/var/log/$app/$app.log"
 
 # Configuration ssowat
-ynh_app_setting_set $app unprotected_uris "/"    
+ynh_print_info "Configuring SSOwat..."
+if [ $is_public -eq 1 ]
+then
+	ynh_app_setting_set $app unprotected_uris "/"    
+fi
 
-yunohost app ssowatconf
 
+#=================================================
+# HOOKS FOR CREATE USER AND REMOVE
+#=================================================
+ynh_replace_string "__DATA_USER__" $data_user ../hooks/post_user_create
+ynh_replace_string "__APP__" $app ../hooks/post_user_create
+ynh_replace_string "__DATA_USER__" $data_user ../hooks/post_user_delete
 
 #Add service radicale
-yunohost service add $app
+ynh_print_info "Starting service..."
 systemctl enable $app
 yunohost service start $app
 
 
 #=================================================
-# PREPARE THE HOOKS
+# RELOAD NGINX
 #=================================================
+ynh_print_info "Reloading nginx web server..."
+service nginx reload
 
-# Modification des hook pour la création des collections par défaut des nouveaux utilisateurs. Et leur suppression
-ynh_replace_string "__FINALPATH__" "$final_path" ../hooks/post_user_delete
+

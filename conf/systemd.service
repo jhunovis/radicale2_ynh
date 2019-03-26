@@ -2,10 +2,10 @@
 Description=A simple CalDAV (calendar) and CardDAV (contact) server
 
 [Service]
-ExecStart=__APP_PATH__/bin/radicale
+ExecStart=__FINAL_PATH__/bin/radicale
 Restart=on-failure
 User=radicale
-WorkingDirectory=__APP_PATH__
+WorkingDirectory=__FINAL_PATH__
 EnvironnmentFile=/etc/radicale/radicale.env
 # Deny other users access to the calendar data
 UMask=0027
@@ -15,7 +15,7 @@ ProtectSystem=strict
 #ProtectHome=true
 PrivateDevices=true
 #NoNewPrivileges=true
-ReadWritePaths=__FINALPATH__
+ReadWritePaths=__DATA_USER__
 ReadWritePaths=/var/log/radicale
 
 [Install]

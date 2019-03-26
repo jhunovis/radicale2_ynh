@@ -75,7 +75,7 @@ type = multifilesystem
 #custom_handler =
 
 # Folder for storing local collections, created if not present
-filesystem_folder = __FINALPATH__/collections
+filesystem_folder = __DATA_USER__/collections
 
 [logging]
 

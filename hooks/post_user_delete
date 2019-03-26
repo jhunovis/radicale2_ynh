@@ -1,6 +1,6 @@
 #!/bin/bash
 
 user=$1
-final_path=__FINALPATH__
+data_user=__DATA_USER__
 
-sudo rm -r $final_path/collections/$user
+rm -fr $data_user/collections/$user
