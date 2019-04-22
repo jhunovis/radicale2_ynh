@@ -164,6 +164,8 @@ fi
 # RELOAD NGINX AND RESTART SERVICE
 #=================================================
 ynh_print_info "Starting $app service..."
+ynh_replace_string "__PATH__" $path_url ../conf/nginx.conf
+
 yunohost service start $app
 
 ynh_print_info "Reloading nginx web server ..."
