@@ -10,8 +10,8 @@
   "url": "https://radicale.org",
   "licence": "free",
   "maintainer": {
-    "name": "kitoy",
-    "email": "kitoy@kitoy.me"
+    "name": "jhunovis",
+    "email": "jh-ynh@lunovis.eu"
   },
   "services": [
     "nginx"
