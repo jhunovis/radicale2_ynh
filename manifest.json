@@ -1,53 +1,50 @@
 {
-	"name": "Radicale2_ynh",
-    	"id": "radicale",
-	"packaging_format" : 1,
-    	"description": {
-        	"en": "CalDAV (calendar) and CardDAV (contact) synchronization server",
-        	"fr": "Serveur de synchronisation CalDAV et CardDAV"
-    	},
-	"version": "2.1.10",
-    	"url": "https://radicale.org",
-    	"licence": "free",
-    	"maintainer": {
-        	"name": "kitoy",
-        	"email": "kitoy@kitoy.me"
-    	},
-    
-    	"services": [
-		"nginx"
-		],
-
-    	"multi_instance": false,
-
-    	"arguments": {
-        	"install" : [
-            	{
-                	"name": "domain",
-                	"ask": {
-                    		"en": "Choose a domain for Radicale",
-                    		"fr": "Choisissez un domaine pour Radicale"
-                	},
-                	"example": "domain.org"
-            	},
-            	{
-                	"name": "path",
-                	"ask": {
-                    		"en": "Choose a path for Radicale",
-                    		"fr": "Choisissez un chemin pour Radicale"
-                	},
-                	"example": "/example",
-                	"default": "/radicale"
-            	},
-		{
-			"name": "is_public",
-			"type": "boolean",
-			"ask": {
-				"en": "Is it a public application ?",
-				"fr": "Est-ce une application publique ?"
-			},
-			"default": true
-		}	
-		]
-    }
+  "name": "Radicale2_ynh",
+  "id": "radicale",
+  "packaging_format": 1,
+  "description": {
+    "en": "CalDAV (calendar) and CardDAV (contact) synchronization server",
+    "fr": "Serveur de synchronisation CalDAV et CardDAV"
+  },
+  "version": "2.1.10",
+  "url": "https://radicale.org",
+  "licence": "free",
+  "maintainer": {
+    "name": "kitoy",
+    "email": "kitoy@kitoy.me"
+  },
+  "services": [
+    "nginx"
+  ],
+  "multi_instance": false,
+  "arguments": {
+    "install": [
+      {
+        "name": "domain",
+        "ask": {
+          "en": "Choose a domain for Radicale",
+          "fr": "Choisissez un domaine pour Radicale"
+        },
+        "example": "domain.org"
+      },
+      {
+        "name": "path",
+        "ask": {
+          "en": "Choose a path for Radicale",
+          "fr": "Choisissez un chemin pour Radicale"
+        },
+        "example": "/example",
+        "default": "/radicale"
+      },
+      {
+        "name": "is_public",
+        "type": "boolean",
+        "ask": {
+          "en": "Is it a public application ?",
+          "fr": "Est-ce une application publique ?"
+        },
+        "default": true
+      }
+    ]
+  }
 }
