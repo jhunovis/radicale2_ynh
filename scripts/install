@@ -42,10 +42,10 @@ test ! -e "$final_path" || ynh_die "This path exist, $app is already intalled ? 
 
 
 # Normalize the url path syntax
-path_url=$(ynh_normalize_url_path $path_url)
+path_url=$(ynh_normalize_url_path "$path_url")
 
 # Register (book) web path
-ynh_webpath_register $app $domain $path_url
+ynh_webpath_register "$app" "$domain" "$path_url"
 
 #=================================================
 # STANDARD MODIFICATIONS
@@ -54,24 +54,24 @@ ynh_webpath_register $app $domain $path_url
 #=================================================
 ynh_print_info "Storing installation settings..."
 
-ynh_app_setting_set $app domain $domain
-ynh_app_setting_set $app path $path_url
-ynh_app_setting_set $app is_public $is_public
-ynh_app_setting_set $app version $version
+ynh_app_setting_set "$app" domain "$domain"
+ynh_app_setting_set "$app" path "$path_url"
+ynh_app_setting_set "$app" is_public "$is_public"
+ynh_app_setting_set "$app" version "$version"
 
 
 #=================================================
 # INSTALL DEPENDENCIES
 #=================================================
 ynh_print_info "Installing dependencies..."
-ynh_install_app_dependencies $pkg_dependencies
+ynh_install_app_dependencies "$pkg_dependencies"
 
 
 #=================================================
 # CREATE DEDICATED USER
 #=================================================
 ynh_print_info "Configuring a system user..."
-ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
+ynh_system_user_create "$app"	# Créer un utilisateur système dédié à l'app
 
 #=================================================
 # SPECIFIC SETUP
@@ -81,30 +81,30 @@ ynh_system_user_create $app	# Créer un utilisateur système dédié à l'app
 # Init virtualenv
 ynh_print_info "Setting up source file ..."
 
-virtualenv -p python3 $final_path
+virtualenv -p python3 "$final_path"
 
-$final_path/bin/pip3 install 'radicale==2.1.10' ldap3
-$final_path/bin/pip3 install ../sources/ajouts_radicale/ynh_ldap_auth/
+"$final_path/bin/pip3" install 'radicale==2.1.10' ldap3
+"$final_path/bin/pip3" install ../sources/ajouts_radicale/ynh_ldap_auth/
 
-ynh_app_setting_set $app final_path $final_path
+ynh_app_setting_set "$app" final_path "$final_path"
 
-mkdir $data_user
-chown -R $app: $data_user
-ynh_app_setting_set $app data_user $data_user
+mkdir "$data_user"
+chown -R "$app": "$data_user"
+ynh_app_setting_set "$app" data_user "$data_user"
 #=================================================
 # CONFIGURE RADICALE
 #=================================================
 #Configuration Radicale
-mkdir -p /etc/$app
-cp ../conf/config /etc/$app/
-cp ../conf/logging /etc/$app/
+mkdir -p "/etc/$app"
+cp ../conf/config "/etc/$app/"
+cp ../conf/logging "/etc/$app/"
 
-cp ../conf/radicale.env /etc/$app/
+cp ../conf/radicale.env "/etc/$app/"
 
 
-ynh_replace_string "__FINAL_PATH__" "$final_path" /etc/$app/radicale.env
-ynh_replace_string "__PATH__" "${path_url%/}" /etc/$app/config
-ynh_replace_string "__DATA_USER__" "$data_user" /etc/$app/config
+ynh_replace_string "__FINAL_PATH__" "$final_path" "/etc/$app/radicale.env"
+ynh_replace_string "__PATH__" "${path_url%/}" "/etc/$app/config"
+ynh_replace_string "__DATA_USER__" "$data_user" "/etc/$app/config"
 
 # Enregistre la somme de contrôle du fichier de config
 ynh_store_file_checksum "/etc/$app/config"
@@ -112,37 +112,37 @@ ynh_store_file_checksum "/etc/$app/logging"
 ynh_store_file_checksum "/etc/$app/radicale.env"
 
 # Set permissions to radicale directory
-chown root: -R $final_path
+chown root: -R "$final_path"
 
 # Set permissions to radicale directory
-mkdir /var/log/$app
-touch /var/log/$app/$app.log
-chown $app: -R /var/log/$app
+mkdir "/var/log/$app"
+touch "/var/log/$app/$app.log"
+chown "$app": -R "/var/log/$app"
 
 #=================================================
 # SETUP SYSTEMD
 #=================================================
 ynh_print_info "Configuring a systemd service..."
 ynh_add_systemd_config
-ynh_replace_string "__FINAL_PATH__" "$final_path" /etc/systemd/system/$app.service
-ynh_replace_string "__DATA_USER__" "$data_user" /etc/systemd/system/$app.service
-ynh_store_file_checksum /etc/systemd/system/$app.service
+ynh_replace_string "__FINAL_PATH__" "$final_path" "/etc/systemd/system/$app.service"
+ynh_replace_string "__DATA_USER__" "$data_user" "/etc/systemd/system/$app.service"
+ynh_store_file_checksum "/etc/systemd/system/$app.service"
 
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
 # Modify Nginx configuration file and copy it to Nginx conf directory
 ynh_print_info "Configuring nginx web server..."
-ynh_replace_string "__PATH__" $path_url ../conf/nginx.conf
+ynh_replace_string "__PATH__" "$path_url" ../conf/nginx.conf
 ynh_add_nginx_config
 
 ynh_store_file_checksum "$finalnginxconf"
 
 # Fix permission
-chmod 755 /etc/$app/
-find /opt/yunohost/$app/ -type d -exec chmod 2755 {} \;
-find /opt/yunohost/$app/ -type f -exec chmod g+r,o+r {} \;
-chmod 644 /etc/$app/*
+chmod 755 "/etc/$app/"
+find "/opt/yunohost/$app/" -type d -exec chmod 2755 {} \;
+find "/opt/yunohost/$app/" -type f -exec chmod g+r,o+r {} \;
+chmod 644 "/etc/$app/*"
 
 
 #=================================================
@@ -150,31 +150,31 @@ chmod 644 /etc/$app/*
 #=================================================
 
 ynh_print_info "Configuring log rotation..."
-cp ../conf/logrotate /etc/logrotate.d/$app
-ynh_replace_string "__NAME__" "$app" /etc/logrotate.d/$app
+cp ../conf/logrotate "/etc/logrotate.d/$app"
+ynh_replace_string "__NAME__" "$app" "/etc/logrotate.d/$app"
 ynh_store_file_checksum "/etc/logrotate.d/$app"
 
-yunohost service add $app --log "/var/log/$app/$app.log"
+yunohost service add "$app" --log "/var/log/$app/$app.log"
 
 # Configuration ssowat
 ynh_print_info "Configuring SSOwat..."
-if [ $is_public -eq 1 ]
+if [ "$is_public" -eq 1 ]
 then
-	ynh_app_setting_set $app unprotected_uris "/"    
+	ynh_app_setting_set "$app" unprotected_uris "/"
 fi
 
 
 #=================================================
 # HOOKS FOR CREATE USER AND REMOVE
 #=================================================
-ynh_replace_string "__DATA_USER__" $data_user ../hooks/post_user_create
-ynh_replace_string "__APP__" $app ../hooks/post_user_create
-ynh_replace_string "__DATA_USER__" $data_user ../hooks/post_user_delete
+ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_user_create
+ynh_replace_string "__APP__" "$app" ../hooks/post_user_create
+ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_user_delete
 
 #Add service radicale
 ynh_print_info "Starting service..."
-systemctl enable $app
-yunohost service start $app
+systemctl enable "$app"
+yunohost service start "$app"
 
 
 #=================================================
