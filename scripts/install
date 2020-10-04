@@ -83,7 +83,7 @@ ynh_print_info "Setting up source file ..."
 
 virtualenv -p python3 "$final_path"
 
-"$final_path/bin/pip3" install 'radicale==2.1.10' ldap3
+"$final_path/bin/pip3" install "radicale==$version" ldap3
 "$final_path/bin/pip3" install ../sources/ajouts_radicale/ynh_ldap_auth/
 
 ynh_app_setting_set "$app" final_path "$final_path"
