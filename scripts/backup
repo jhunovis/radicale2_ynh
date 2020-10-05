@@ -26,9 +26,9 @@ ynh_abort_if_errors
 #=================================================
 ynh_print_info "Loading installation settings..."
 app=$YNH_APP_INSTANCE_NAME
-final_path=$(ynh_app_setting_get $app final_path)
-domain=$(ynh_app_setting_get $app domain)
-data_user=$(ynh_app_setting_get $app data_user)
+final_path=$(ynh_app_setting_get "$app" final_path)
+domain=$(ynh_app_setting_get "$app" domain)
+data_user=$(ynh_app_setting_get "$app" data_user)
 
 #=================================================
 # BACKUP THE APP MAIN DIR
@@ -77,7 +77,7 @@ ynh_backup "/etc/logrotate.d/$app"
 #=================================================
 ynh_print_info "Backing up $app configuration"
 
-ynh_backup /etc/$app
+ynh_backup "/etc/$app"
 
 
 #=================================================

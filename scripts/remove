@@ -15,19 +15,19 @@ source /usr/share/yunohost/helpers
 ynh_print_info "Loading installation settings ..."
 app=$YNH_APP_INSTANCE_NAME
 
-domain=$(ynh_app_setting_get $app domain)
-final_path=$(ynh_app_setting_get $app final_path)
-data_user=$(ynh_app_setting_get $app data_user)
+domain=$(ynh_app_setting_get "$app" domain)
+final_path=$(ynh_app_setting_get "$app" final_path)
+data_user=$(ynh_app_setting_get "$app" data_user)
 
 #=================================================
 # STANDARD REMOVE
 #=================================================
 # REMOVE SERVICE FROM ADMIN PANEL
 #=================================================
-if yunohost service status $app >/dev/null 2&>1 
+if yunohost service status "$app" >/dev/null 2&>1
 then
 	ynh_print_info "Removing $app service"
-	yunohost service remove $app
+	yunohost service remove "$app"
 fi
 
 #=================================================
@@ -62,7 +62,7 @@ ynh_remove_nginx_config	# Suppression de la configuration nginx
 #=================================================
 ynh_print_info "Removing logrotate configuration"
 ynh_remove_logrotate	# Suppression de la configuration de logrotate
-ynh_secure_remove /var/log/$app
+ynh_secure_remove "/var/log/$app"
 
 #=================================================
 # SPECIFIC REMOVE
@@ -79,7 +79,7 @@ ynh_secure_remove "/etc/$app"
 # REMOVE DEDICATED USER
 #=================================================
 ynh_print_info "Removing the dedicated system user"
-ynh_system_user_delete $app
+ynh_system_user_delete "$app"
 
 #=================================================
 # END OF SCRIPT

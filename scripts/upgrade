@@ -15,12 +15,12 @@ source /usr/share/yunohost/helpers
 
 app=$YNH_APP_INSTANCE_NAME
 
-domain=$(ynh_app_setting_get $app domain)
-path_url=$(ynh_app_setting_get $app path)
-is_public=$(ynh_app_setting_get $app is_public)
-final_path=$(ynh_app_setting_get $app final_path)
-data_user=$(ynh_app_setting_get $app data_user)
-version=$(ynh_app_setting_get $app version)
+domain=$(ynh_app_setting_get "$app" domain)
+path_url=$(ynh_app_setting_get "$app" path)
+is_public=$(ynh_app_setting_get "$app" is_public)
+final_path=$(ynh_app_setting_get "$app" final_path)
+data_user=$(ynh_app_setting_get "$app" data_user)
+version=$(ynh_app_setting_get "$app" version)
 
 #=================================================
 # ENSURE DOWNWARD COMPATIBILITY
@@ -29,17 +29,17 @@ ynh_print_info "Ensuring downward compatibilty..."
 
 # Fix is_public as a boolean value
 if [ "$is_public" = "Yes" ]; then
-	ynh_app_setting_set $app is_public 1
+	ynh_app_setting_set "$app" is_public 1
 	is_public=1
 elif [ "is_public" = "No" ]; then
-	ynh_app_setting_set $app is_public 0
+	ynh_app_setting_set "$app" is_public 0
 	is_public=0
 fi
 
 # if final_path doesn't exist, create it
-if [ -z $final_path ]; then
-	final_path=/opt/yunohost/$app
-	ynh_app_setting_set $app final_path $final_path
+if [ -z "$final_path" ]; then
+	final_path="/opt/yunohost/$app"
+	ynh_app_setting_set "$app" final_path "$final_path"
 fi
 
 #=================================================
@@ -49,7 +49,7 @@ fi
 if [ -z "$version" ]
 then
 	version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -f 1)	# Retrieve the version number in the manifest file.
-	ynh_app_setting_set $app version "$version"
+	ynh_app_setting_set "$app" version "$version"
 fi
 
 
@@ -71,7 +71,7 @@ ynh_abort_if_errors
 # CHECK THE PATH
 #=================================================
 
-path_url=$(ynh_normalize_url_path $path_url)
+path_url=$(ynh_normalize_url_path "$path_url")
 
 #=================================================
 # STANDARD UPAGRADE STEPS
@@ -82,7 +82,7 @@ ynh_print_info "Stopping $app service ..."
 yunohost service stop radicale
 
 ynh_print_info "Upgrading package $app..."
-$final_path/bin/pip3 install --upgrade radicale==$version 
+"$final_path/bin/pip3" install --upgrade "radicale==$version"
 
 #=================================================
 # NGINX CONFIGURATION
@@ -96,14 +96,14 @@ ynh_add_nginx_config
 #=================================================
 ynh_print_info "Upgrading dependencies..."
 
-ynh_install_app_dependencies $pkg_dependencies
+ynh_install_app_dependencies "$pkg_dependencies"
 
 #=================================================
 # CREATE DEDICATED USER
 #=================================================
 ynh_print_info "Making sure dedicated system user exist..."
 
-ynh_system_user_create $app
+ynh_system_user_create "$app"
 
 
 #=================================================
@@ -125,7 +125,7 @@ ynh_replace_string "__FINAL_PATH__" "$final_path" ../hooks/post_user_delete
 # SETUP LOGROTATE
 #=================================================
 ynh_print_info "Upgrading logrotate configuration"
-cp ../conf/logrotate /etc/logrotate.d/$app
+cp ../conf/logrotate "/etc/logrotate.d/$app"
 
 
 #=================================================
@@ -133,12 +133,12 @@ cp ../conf/logrotate /etc/logrotate.d/$app
 #=================================================
 ynh_print_info "Upgrading systemd confguration ..."
 ynh_add_systemd_config
-ynh_replace_string "__FINAL_PATH__" "$final_path" /etc/systemd/system/$app.service
+ynh_replace_string "__FINAL_PATH__" "$final_path" "/etc/systemd/system/$app.service"
 
 #=================================================
 # SECURE FILES AND DIRECTORIES
 #=================================================
-chown -R root: $final_path
+chown -R root: "$final_path"
 
 #=================================================
 # PREPARE THE HOOKS
@@ -157,16 +157,16 @@ ynh_print_info "Upgrading SSOwat configuration..."
 #Make app public if necessary
 if [ $is_public -eq 1 ]
 then
-	ynh_app_setting_set $app unprotected_uris "/"
+	ynh_app_setting_set "$app" unprotected_uris "/"
 fi
 
 #=================================================
 # RELOAD NGINX AND RESTART SERVICE
 #=================================================
 ynh_print_info "Starting $app service..."
-ynh_replace_string "__PATH__" $path_url ../conf/nginx.conf
+ynh_replace_string "__PATH__" "$path_url" ../conf/nginx.conf
 
-yunohost service start $app
+yunohost service start "$app"
 
 ynh_print_info "Reloading nginx web server ..."
 systemctl reload nginx

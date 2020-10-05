@@ -27,10 +27,10 @@ ynh_abort_if_errors
 ynh_print_info "Loading installation settings..."
 
 app=$YNH_APP_INSTANCE_NAME
-path_url=$(ynh_app_setting_get $app path)
-final_path=$(ynh_app_setting_get $app final_path)
-domain=$(ynh_app_setting_get $app domain)
-data_user=$(ynh_app_setting_get $app data_user)
+path_url=$(ynh_app_setting_get "$app" path)
+final_path=$(ynh_app_setting_get "$app" final_path)
+domain=$(ynh_app_setting_get "$app" domain)
+data_user=$(ynh_app_setting_get "$app" data_user)
 
 ynh_abort_if_errors
 
@@ -39,9 +39,9 @@ ynh_abort_if_errors
 #=================================================
 ynh_print_info "Validating restoration parameters..."
 
-ynh_webpath_available $domain $path_url \
+ynh_webpath_available "$domain" "$path_url" \
 		|| ynh_die "Path not available: ${domain}${path_url}"
-test ! -d $final_path \
+test ! -d "$final_path" \
 		|| ynh_die "There is already a directory: $final_path "
 
 #=================================================
@@ -69,15 +69,15 @@ ynh_restore_file "$data_user"
 ynh_print_info "Recreating the dedicated system user..."
 
 # Create the dedicated user (if not existing)
-ynh_system_user_create $app
+ynh_system_user_create "$app"
 
 #=================================================
 # RESTORE USER RIGHTS
 #=================================================
 
 # Restore permissions on app files
-chown -R root: $final_path
-chown -R radicale: $data_user
+chown -R root: "$final_path"
+chown -R radicale: "$data_user"
 
 #=================================================
 # RESTORE THE PHP-FPM CONFIGURATION
@@ -94,7 +94,7 @@ ynh_restore_file "/etc/$app"
 ynh_print_info "Reinstalling dependencies..."
 
 # Define and install dependencies
-ynh_install_app_dependencies $pkg_dependencies
+ynh_install_app_dependencies "$pkg_dependencies"
 
 
 #=================================================
@@ -103,15 +103,15 @@ ynh_install_app_dependencies $pkg_dependencies
 ynh_print_info "Restore the systemd configuration..."
 
 ynh_restore_file "/etc/systemd/system/$app.service"
-systemctl enable $app.service
+systemctl enable "$app.service"
 
 
 #=================================================
 # ADVERTISE SERVICE IN ADMIN PANEL
 #=================================================
-mkdir /var/log/$app
-chown $app: /var/log/$app
-yunohost service add $app --log "/var/log/$app/$app.log"
+mkdir "/var/log/$app"
+chown "$app:" "/var/log/$app"
+yunohost service add "$app" --log "/var/log/$app/$app.log"
 
 #=================================================
 # RESTORE THE LOGROTATE CONFIGURATION
@@ -124,7 +124,7 @@ ynh_restore_file "/etc/logrotate.d/$app"
 #=================================================
 ynh_print_info "Reloading nginx web server and $app service..."
 
-systemctl start $app.service
+systemctl start "$app.service"
 systemctl reload nginx
 
 #=================================================
