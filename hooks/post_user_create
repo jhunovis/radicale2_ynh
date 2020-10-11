@@ -3,5 +3,5 @@
 user=$1
 data_user=__DATA_USER__
 app=__APP__
-mkdir $data_user/collections/$user
-chown $app: $data_user/collections/$user
+mkdir "$data_user/$user"
+chown $app: "${data_user:?}/$user"

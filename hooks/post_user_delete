@@ -3,4 +3,4 @@
 user=$1
 data_user=__DATA_USER__
 
-rm -fr $data_user/collections/$user
+rm -fr "${data_user:?}/$user"

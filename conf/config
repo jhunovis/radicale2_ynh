@@ -12,7 +12,6 @@
 hosts=127.0.0.1:5232
 
 [encoding]
-
 # Encoding for responding requests
 request = utf-8
 
@@ -71,7 +70,7 @@ type = multifilesystem
 #custom_handler =
 
 # Folder for storing local collections, created if not present
-filesystem_folder = __DATA_USER__/collections
+filesystem_folder = __DATA_USER__
 
 [logging]
 

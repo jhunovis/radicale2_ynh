@@ -34,8 +34,8 @@ version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -
 # CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
 #=================================================
 ynh_print_info "Validating installation parameters ..."
-data_user=/home/$app
-test ! -e "$data_user" || ynh_die "This path already contains a folder"
+data_user="/home/$app"
+test ! -e "$data_user" || ynh_die "The user data path $data_user already contains a folder."
 
 final_path=/opt/yunohost/$app
 test ! -e "$final_path" || ynh_die "This path exist, $app is already intalled ? "
