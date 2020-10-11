@@ -16,8 +16,7 @@ ynh_clean_setup() {
   true
 }
 
-ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
-
+ynh_abort_if_errors
 
 #=================================================
 # RETRIEVE ARGUMENTS FROM THE MANIFEST
@@ -28,7 +27,7 @@ path_url=$YNH_APP_ARG_PATH
 is_public=$YNH_APP_ARG_IS_PUBLIC
 app=$YNH_APP_INSTANCE_NAME
 
-version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -f 1)	# Retrieve the version number in the manifest file.
+version=$(grep '\"version\": ' ../manifest.json | cut -d '"' -f 4 | cut -d '~' -f 1) # Retrieve the version number in the manifest file.
 
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THIS ARGS
@@ -37,9 +36,8 @@ ynh_print_info "Validating installation parameters ..."
 data_user="/home/$app"
 test ! -e "$data_user" || ynh_die "The user data path $data_user already contains a folder."
 
-final_path=/opt/yunohost/$app
-test ! -e "$final_path" || ynh_die "This path exist, $app is already intalled ? "
-
+final_path="/opt/yunohost/$app"
+test ! -e "$final_path" || ynh_die "The application path $final_path already exists. Is $app already installed?"
 
 # Normalize the url path syntax
 path_url=$(ynh_normalize_url_path "$path_url")
@@ -62,14 +60,14 @@ ynh_app_setting_set "$app" version "$version"
 #=================================================
 # INSTALL DEPENDENCIES
 #=================================================
-ynh_print_info "Installing dependencies..."
+ynh_print_info "Installing dependencies: ${pkg_dependencies}..."
 ynh_install_app_dependencies "$pkg_dependencies"
 
 #=================================================
 # CREATE DEDICATED USER
 #=================================================
-ynh_print_info "Configuring a system user..."
-ynh_system_user_create "$app"	# Créer un utilisateur système dédié à l'app
+ynh_print_info "Creating a system user '${app}'..."
+ynh_system_user_create "$app"
 
 #=================================================
 # SPECIFIC SETUP
@@ -77,22 +75,24 @@ ynh_system_user_create "$app"	# Créer un utilisateur système dédié à l'app
 # INSTALL RADICALE IN A VIRTUALENV
 #=================================================
 # Init virtualenv
-ynh_print_info "Setting up source file ..."
-
+ynh_print_info "Creating Python virtual environment for Radicale..."
 virtualenv -p python3 "$final_path"
-
+ynh_print_info "Installing Radicale ${version}..."
 "$final_path/bin/pip3" install "radicale==$version" ldap3
+ynh_print_info "Installing LDAP login support for Radicale..."
 "$final_path/bin/pip3" install ../sources/marcoh00/radicale_auth_ldap
 
 ynh_app_setting_set "$app" final_path "$final_path"
 
-mkdir "$data_user"
+ynh_print_info "Creating user data directory '${data_user}'..."
+mkdir -p "$data_user"
 chown -R "$app": "$data_user"
 ynh_app_setting_set "$app" data_user "$data_user"
 #=================================================
 # CONFIGURE RADICALE
 #=================================================
 #Configuration Radicale
+ynh_print_info "Writing configuration settings..."
 mkdir -p "/etc/$app"
 cp ../conf/config "/etc/$app/"
 cp ../conf/logging "/etc/$app/"
