@@ -6,7 +6,7 @@ ExecStart=__FINAL_PATH__/bin/radicale
 Restart=on-failure
 User=radicale
 WorkingDirectory=__FINAL_PATH__
-EnvironnmentFile=/etc/radicale/radicale.env
+EnvironmentFile=/etc/radicale/radicale.env
 # Deny other users access to the calendar data
 UMask=0027
 # Optional security settings
