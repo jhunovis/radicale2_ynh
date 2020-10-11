@@ -135,8 +135,7 @@ ynh_add_nginx_config
 chmod 755 "/etc/$app/"
 find "/opt/yunohost/$app/" -type d -exec chmod 2755 {} \;
 find "/opt/yunohost/$app/" -type f -exec chmod g+r,o+r {} \;
-chmod 644 "/etc/$app/*"
-
+chmod 644 "/etc/$app/"*
 
 #=================================================
 # SETUP LOGROTATE
