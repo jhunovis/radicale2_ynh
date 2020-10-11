@@ -20,8 +20,7 @@ request = utf-8
 stock = utf-8
 
 [auth]
-type = ynh_ldap_auth
-
+type = radicale_auth_ldap
 
 # LDAP server URL, with protocol and port
 ldap_url = ldap://localhost:389
@@ -39,16 +38,13 @@ ldap_filter =
 
 # LDAP dn for initial login, used if LDAP server does not allow anonymous searches
 # Leave empty if searches are anonymous
-#ldap_binddn =
+ldap_binddn =
 
 # LDAP password for initial login, used with ldap_binddn
-#ldap_password =
+ldap_password =
 
 # LDAP scope of the search
-ldap_scope = OneLevel
-
-
-
+ldap_scope = LEVEL
 
 [rights]
 
