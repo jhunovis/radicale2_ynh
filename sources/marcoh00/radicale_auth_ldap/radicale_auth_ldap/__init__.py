@@ -63,7 +63,7 @@ class Auth(BaseAuth):
         if FILTER:
             filter_string = "(&(%s)%s)" % (distinguished_name, FILTER)
         else:
-            filter_string = distinguished_name
+            filter_string = "(" + distinguished_name + ")"
         self.logger.debug("LDAP filter: %s" % filter_string)
 
         conn.search(search_base=BASE,
