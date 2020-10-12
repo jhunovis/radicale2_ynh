@@ -1,11 +1,5 @@
 #!/bin/bash
 
-#=================================================
-# GENERIC START
-#=================================================
-# IMPORT GENERIC HELPERS
-#=================================================
-
 #Keep this path for calling _common.sh inside the execution's context of backup and restore scripts
 source /usr/share/yunohost/helpers
 
@@ -19,68 +13,29 @@ ynh_clean_setup () {
 # Exit if an error occurs during the execution of the script
 ynh_abort_if_errors
 
-
-#=================================================
-# LOAD SETTINGS
-#=================================================
 ynh_print_info "Loading installation settings..."
 app=$YNH_APP_INSTANCE_NAME
 final_path=$(ynh_app_setting_get "$app" final_path)
 domain=$(ynh_app_setting_get "$app" domain)
 data_user=$(ynh_app_setting_get "$app" data_user)
 
-#=================================================
-# BACKUP THE APP MAIN DIR
-#=================================================
 ynh_print_info "Backing up the main app directory..."
-
 ynh_backup "$final_path"
 
-
-#=================================================
-# BACKUP DATA
-#=================================================
 ynh_print_info "Backing up the data app directory..."
-
 ynh_backup "$data_user"
 
-
-#=================================================
-# BACKUP THE NGINX CONFIGURATION
-#=================================================
 ynh_print_info "Backing up nginx web server configuration..."
-
 ynh_backup "/etc/nginx/conf.d/$domain.d/$app.conf"
 
-
-#=================================================
-# SPECIFIC BACKUP
-#=================================================
-#=================================================
-# BACKUP SYSTEMD
-#=================================================
-
 ynh_print_info "Backing up systemd configuration..."
-
 ynh_backup "/etc/systemd/system/$app.service"
 
-#=================================================
-# BACKUP LOGROTATE
-#=================================================
 ynh_print_info "Backing up logrotate configuration..."
-
 ynh_backup "/etc/logrotate.d/$app"
 
-#=================================================
-# BACKUP RADICALE CONFIGURATION
-#=================================================
 ynh_print_info "Backing up $app configuration"
-
 ynh_backup "/etc/$app"
 
-
-#=================================================
-# END OF SCRIPT
-#=================================================
 ynh_print_info "Backup script completed for $app. (YunoHost will then actually copy those files to the archive)."
 
