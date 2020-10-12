@@ -1,32 +1,34 @@
-Radicale for YunoHost
-==================
+# Radicale for YunoHost
+Self-host a [Radicale 2](http://radicale.org/) instance on your [Yunohost](https://yunohost.org/#/) server.
 
-[Yunohost project](https://yunohost.org/#/)
+## Upgrading from kitoy30's package
+- backup your user data
+  1. by using Yunohost backup facility
+  2. by creating a tar archive 
+     - connect to out Yunohost instance with `ssh`
+     - execute `sudo tar --directory /home/radicale/collections -czf radicale-collection.tgz .` 
+- uninstall kitoy30's app
+- install this package
+  - `sudo yunohost app install https://github.com/jhunovis/radicale_ynh`
+- restore the tar archive and restore ownership
+  - `sudo tar --directory /home/radicale -xzf radicale-collection.tgz`
+  - `sudo chown -R radicale.radicale /home/radicale`
+- restart Radicale
+  - `sudo systemctl restart radicale`  
 
-Radicale est un serveur CalDAV (calendrier) et CardDAV (contact) complet.
+## About this repository
+This is fork from [kitoy30/radicale2_ynh](https://github.com/kitoy30/radicale2_ynh) which promised support for Radicale 2.
+Alas, it seems to be unmaintained at the moment. There is a sanctioned version of Radicale [listed in the YunoHost
+application catalog](https://github.com/YunoHost-Apps/radicale_ynh), but it is for the heavily outdated version 1
+of Radicale.  
 
-http://radicale.org/
+Main differences to the kitoy30 version are:
+- use the [latest version 2.1.12](https://github.com/Kozea/Radicale/blob/2.1.x/NEWS.md) of Radicale 2
+- switch to a different [LDAP authorization](https://github.com/marcoh00/radicale-auth-ldap) library
+  which at least attempts to sanitize user provided inputs
+- clean up the code
 
-==================
-
-Radicale permet de créé ses calendriers et carnets d'adresses depuis une interface de configuration
-accessible depuis : https://votredomain.tld/radicale/.web/
-
-Il est moins friendly-user que [baikal](https://github.com/julienmalik/baikal_ynh),
-
-La version 2 apporte des améliorations au niveau de la gestion mémoire,
-et une gestion des plugins permettant d'intergré de nouvelles fonctionnalitées facilement
-et de manière plus organisé.
-
-Pour éffectuer une migration de la version 1 vers la 2 vous pouvez vous rendre sur :
-http://radicale.org/1to2/
-
-
-(Optionnel)
-La configuration des partages se fait à l'aide du fichier de configuration des droits '/etc/radicale/rights'.
-
-Les calendriers et les carnet d'adresses créé avec Radicale version 1.x ne sont pas compatible avec la version 2.x
-==================
-
-Le script installe les paquets *libjansson4* *libldap2-dev* *libmatheval1* *libpgm-5.1-0* *libpython-dev* *libsasl2-dev* *libsodium13* *libzmq3* *python-chardet-whl*
-*python-colorama-whl* *python-dev* *python-distlib-whl* *python-html5lib-whl* *python-pip-whl* *python-requests-whl* *python-setuptools-whl* *python-six-whl* *python-urllib3-whl* *python-virtualenv* *python3-virtualenv* *virtualenv*.
+Plans for the future are:
+- update to Radicale 3
+- get rid of LDAP
+- automated testing  
