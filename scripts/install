@@ -149,9 +149,10 @@ ynh_store_file_checksum "/etc/logrotate.d/$app"
 yunohost service add "$app" --log "/var/log/$app/$app.log"
 
 # Configuration ssowat
-ynh_print_info "Configuring SSOwat..."
+ynh_print_info "Configuring permissions..."
 if [ "$is_public" -eq 1 ]; then
-  ynh_app_setting_set "$app" unprotected_uris "/"
+  ynh_print_info "Permitting unauthorized uses to access the app..."
+  ynh_permission_update --permission "main" --add visitors
 fi
 
 #=================================================
