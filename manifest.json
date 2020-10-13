@@ -1,10 +1,10 @@
 {
   "name": "Radicale",
-  "id": "jhuno_radicale",
+  "id": "radicale_jh",
   "packaging_format": 1,
   "description": {
-    "en": "CalDAV (calendar) and CardDAV (contact) synchronization server (https://github.com/jhunovis/jhuno_radicale_ynh)",
-    "fr": "Serveur de synchronisation CalDAV et CardDAV (https://github.com/jhunovis/jhuno_radicale_ynh)"
+    "en": "CalDAV (calendar) and CardDAV (contact) synchronization server (https://github.com/jhunovis/radicale_jh_ynh)",
+    "fr": "Serveur de synchronisation CalDAV et CardDAV (https://github.com/jhunovis/radicale_jh_ynh)"
   },
   "version": "2.1.12~ynh1",
   "url": "https://radicale.org",

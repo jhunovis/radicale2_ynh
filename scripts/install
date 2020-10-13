@@ -39,6 +39,9 @@ test ! -e "$data_user" || ynh_die "The user data path $data_user already contain
 final_path="/opt/yunohost/$app"
 test ! -e "$final_path" || ynh_die "The application path $final_path already exists. Is $app already installed?"
 
+config_path="/etc/$app"
+test ! -e "$config_path" || ynh_die "The application path $config_path already exists. Is $app already installed?"
+
 # Normalize the url path syntax
 path_url=$(ynh_normalize_url_path "$path_url")
 
@@ -93,18 +96,20 @@ ynh_app_setting_set "$app" data_user "$data_user"
 #=================================================
 #Configuration Radicale
 ynh_print_info "Writing configuration settings..."
-mkdir -p "/etc/$app"
-cp ../conf/config "/etc/$app/"
-cp ../conf/logging "/etc/$app/"
-cp ../conf/radicale.env "/etc/$app/"
+mkdir -p "$config_path"
+cp ../conf/config "$config_path"
+cp ../conf/logging "$config_path"
+cp ../conf/radicale.env "$config_path"
 
-ynh_replace_string "__FINAL_PATH__" "$final_path" "/etc/$app/radicale.env"
-ynh_replace_string "__PATH__" "${path_url%/}" "/etc/$app/config"
-ynh_replace_string "__DATA_USER__" "$data_user" "/etc/$app/config"
+ynh_replace_string "__FINAL_PATH__" "$final_path" "$config_path/radicale.env"
+ynh_replace_string "__PATH__" "${path_url%/}" "$config_path/config"
+ynh_replace_string "__DATA_USER__" "$data_user" "$config_path/config"
+ynh_replace_string "__CONFIG_PATH__" "$config_path" "$config_path/config"
+ynh_replace_string "__APP_ID__" "$app" "$config_path/logging"
 
-ynh_store_file_checksum "/etc/$app/config"
-ynh_store_file_checksum "/etc/$app/logging"
-ynh_store_file_checksum "/etc/$app/radicale.env"
+ynh_store_file_checksum "$config_path/config"
+ynh_store_file_checksum "$config_path/logging"
+ynh_store_file_checksum "$config_path/radicale.env"
 
 # Set permissions to radicale directory
 chown root: -R "$final_path"
@@ -112,11 +117,14 @@ chown root: -R "$final_path"
 #=================================================
 # SETUP SYSTEMD
 #=================================================
-ynh_print_info "Configuring a systemd service..."
+systemd_config_file="/etc/systemd/system/$app.service"
+ynh_print_info "Configuring a systemd service $systemd_config_file"
 ynh_add_systemd_config
-ynh_replace_string "__FINAL_PATH__" "$final_path" "/etc/systemd/system/$app.service"
-ynh_replace_string "__DATA_USER__" "$data_user" "/etc/systemd/system/$app.service"
-ynh_store_file_checksum "/etc/systemd/system/$app.service"
+ynh_replace_string "__FINAL_PATH__" "$final_path" "$systemd_config_file"
+ynh_replace_string "__DATA_USER__" "$data_user" "$systemd_config_file"
+ynh_replace_string "__APP_ID__" "$app" "$systemd_config_file"
+ynh_replace_string "__CONFIG_PATH__" "$config_path" "$systemd_config_file"
+ynh_store_file_checksum "$systemd_config_file"
 
 #=================================================
 # NGINX CONFIGURATION
@@ -127,10 +135,10 @@ ynh_replace_string "__PATH__" "$path_url" ../conf/nginx.conf
 ynh_add_nginx_config
 
 # Fix permission
-chmod 755 "/etc/$app/"
+chmod 755 "$config_path/"
 find "/opt/yunohost/$app/" -type d -exec chmod 2755 {} \;
 find "/opt/yunohost/$app/" -type f -exec chmod g+r,o+r {} \;
-chmod 644 "/etc/$app/"*
+chmod 644 "$config_path/"*
 
 yunohost service add "$app"
 

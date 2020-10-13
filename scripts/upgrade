@@ -79,7 +79,7 @@ path_url=$(ynh_normalize_url_path "$path_url")
 # UPGRADE PACKAGE RADICALE
 #=================================================
 ynh_print_info "Stopping $app service ..."
-yunohost service stop radicale
+yunohost service stop "$app"
 
 ynh_print_info "Upgrading package $app..."
 "$final_path/bin/pip3" install --upgrade "radicale==$version"
@@ -109,14 +109,15 @@ ynh_system_user_create "$app"
 #=================================================
 # UPDATE CONFIGURATION
 #=================================================
-ynh_backup_if_checksum_is_different "/etc/$app/config"
-ynh_store_file_checksum "/etc/$app/config"
+config_path="/etc/$app"
+ynh_backup_if_checksum_is_different "$config_path/config"
+ynh_store_file_checksum "$config_path/config"
 
-ynh_backup_if_checksum_is_different "/etc/$app/logging"
-ynh_store_file_checksum "/etc/$app/lggging"
+ynh_backup_if_checksum_is_different "$config_path/logging"
+ynh_store_file_checksum "$config_path/lggging"
 
-ynh_backup_if_checksum_is_different "/etc/$app/radicale.env"
-ynh_store_file_checksum "/etc/$app/radicale.env"
+ynh_backup_if_checksum_is_different "$config_path/radicale.env"
+ynh_store_file_checksum "$config_path/radicale.env"
 
 ynh_replace_string "__FINAL_PATH__" "$final_path" ../hooks/post_user_delete
 

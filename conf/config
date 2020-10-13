@@ -51,7 +51,7 @@ ldap_scope = LEVEL
 type = owner_only
 
 # File for rights management from_file
-# file = /etc/radicale/rights
+# file = __CONFIG_PATH__/rights
 
 [storage]
 # Storage backend
@@ -70,7 +70,7 @@ type = multifilesystem
 filesystem_folder = __DATA_USER__
 
 [logging]
-config = /etc/radicale/logging
+config = __CONFIG_PATH__/logging
 # Set the default logging level to debug
 debug = False
 # Store all environment variables (including those set in the shell)
