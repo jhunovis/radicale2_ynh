@@ -1,44 +1,27 @@
 # Loggers, handlers and formatters keys
 
 [loggers]
-# Loggers names, main configuration slots
 keys = root
 
 [handlers]
-# Logging handlers, defining logging output methods
-keys = console,file
+# By default only log to the console. They can be queried with `sudo journalctl --unit=radicale`.
+keys = console
 
 [formatters]
-# Logging formatters
-keys = simple,full
-
-
-# Loggers
+keys = simple
 
 [logger_root]
 # Root logger
 level = WARNING
-handlers = console,file
+handlers = console
 
 # Handlers
 [handler_console]
-# Console handler
 class = StreamHandler
 level = INFO
 args = (sys.stdout,)
 formatter = simple
 
-[handler_file]
-# File handler
-class = FileHandler
-level = WARNING
-args = ('/var/log/radicale/radicale.log',)
-formatter = full
-
 [formatter_simple]
 # Simple output format
 format = %(message)s
-
-[formatter_full]
-# Full output format
-format = %(asctime)s - %(levelname)s: %(message)s

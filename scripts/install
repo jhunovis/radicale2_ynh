@@ -109,11 +109,6 @@ ynh_store_file_checksum "/etc/$app/radicale.env"
 # Set permissions to radicale directory
 chown root: -R "$final_path"
 
-# Set permissions to radicale directory
-mkdir "/var/log/$app"
-touch "/var/log/$app/$app.log"
-chown "$app": -R "/var/log/$app"
-
 #=================================================
 # SETUP SYSTEMD
 #=================================================
@@ -137,16 +132,7 @@ find "/opt/yunohost/$app/" -type d -exec chmod 2755 {} \;
 find "/opt/yunohost/$app/" -type f -exec chmod g+r,o+r {} \;
 chmod 644 "/etc/$app/"*
 
-#=================================================
-# SETUP LOGROTATE
-#=================================================
-
-ynh_print_info "Configuring log rotation..."
-cp ../conf/logrotate "/etc/logrotate.d/$app"
-ynh_replace_string "__NAME__" "$app" "/etc/logrotate.d/$app"
-ynh_store_file_checksum "/etc/logrotate.d/$app"
-
-yunohost service add "$app" --log "/var/log/$app/$app.log"
+yunohost service add "$app"
 
 # Configuration ssowat
 ynh_print_info "Configuring permissions..."
