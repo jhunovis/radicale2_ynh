@@ -5,7 +5,7 @@ Self-host a [Radicale 2](http://radicale.org/) instance on your [Yunohost](https
 - backup your user data
   1. by using Yunohost backup facility
   2. by creating a tar archive 
-     - connect to out Yunohost instance with `ssh`
+     - connect to your Yunohost instance with `ssh`
      - execute `sudo tar --directory /home/radicale/collections -czf radicale-collection.tgz .` 
 - uninstall kitoy30's app
 - install this package
@@ -17,7 +17,7 @@ Self-host a [Radicale 2](http://radicale.org/) instance on your [Yunohost](https
   - `sudo systemctl restart radicale`  
 
 ## About this repository
-This is fork from [kitoy30/radicale2_ynh](https://github.com/kitoy30/radicale2_ynh) which promised support for Radicale 2.
+This is a fork from [kitoy30/radicale2_ynh](https://github.com/kitoy30/radicale2_ynh) which promised support for Radicale 2.
 Alas, it seems to be unmaintained at the moment. There is a sanctioned version of Radicale [listed in the YunoHost
 application catalog](https://github.com/YunoHost-Apps/radicale_ynh), but it is for the heavily outdated version 1
 of Radicale.  
