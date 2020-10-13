@@ -150,7 +150,7 @@ ynh_replace_string "__APP__" "$app" ../hooks/post_user_create
 ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_user_delete
 
 #Add service radicale
-ynh_print_info "Starting service..."
+ynh_print_info "Starting service $app..."
 systemctl enable "$app"
 yunohost service start "$app"
 
