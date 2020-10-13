@@ -1,6 +1,6 @@
 #!/bin/bash
 
 user=$1
-data_user=__DATA_USER__
+data_user=__DATA_USER__/collection-root
 
 rm -fr "${data_user:?}/$user"
