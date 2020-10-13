@@ -139,8 +139,6 @@ chown -R root: "$final_path"
 
 # Modification des hook pour la création des collections par défaut des nouveaux utilisateurs. Et leur suppression
 ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_user_delete
-ynh_replace_string "__DATA_USER__" "$data_user" ../hooks/post_create_user
-ynh_replace_string "__APP__" "$app" ../hooks/post_create_user
 
 #=================================================
 # SETUP SSOWAT
