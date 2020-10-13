@@ -138,7 +138,7 @@ yunohost service add "$app"
 # Configuration ssowat
 ynh_print_info "Configuring permissions..."
 if [ "$is_public" -eq 1 ]; then
-  ynh_print_info "Permitting unauthorized uses to access the app..."
+  ynh_print_info "Permitting unauthorized users to access the app..."
   ynh_permission_update --permission "main" --add visitors
 fi
 
