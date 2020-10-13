@@ -1,12 +1,6 @@
 # -*- mode: conf -*-
 # vim:ft=cfg
-
 # Config file for Radicale - A simple calendar server
-#
-# Place it into /etc/radicale/config (global)
-# or ~/.config/radicale/config (user)
-#
-# The current values are the default ones
 
 [server]
 hosts=127.0.0.1:5232
