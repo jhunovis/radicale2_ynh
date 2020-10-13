@@ -1,6 +1,6 @@
 {
-  "name": "Radicale2_ynh",
-  "id": "radicale",
+  "name": "Radicale",
+  "id": "jhuno_radicale",
   "packaging_format": 1,
   "description": {
     "en": "CalDAV (calendar) and CardDAV (contact) synchronization server",
