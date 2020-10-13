@@ -69,12 +69,7 @@ systemctl enable "$app.service"
 #=================================================
 # ADVERTISE SERVICE IN ADMIN PANEL
 #=================================================
-mkdir "/var/log/$app"
-chown "$app:" "/var/log/$app"
-yunohost service add "$app" --log "/var/log/$app/$app.log"
-
-ynh_print_info "Restoring the logrotate configuration..."
-ynh_restore_file "/etc/logrotate.d/$app"
+yunohost service add "$app"
 
 ynh_print_info "Reloading nginx web server and $app service..."
 systemctl start "$app.service"

@@ -121,14 +121,6 @@ ynh_store_file_checksum "$config_path/radicale.env"
 
 ynh_replace_string "__FINAL_PATH__" "$final_path" ../hooks/post_user_delete
 
-
-#=================================================
-# SETUP LOGROTATE
-#=================================================
-ynh_print_info "Upgrading logrotate configuration"
-cp ../conf/logrotate "/etc/logrotate.d/$app"
-
-
 #=================================================
 # SETUP SYSTEMD
 #=================================================
