@@ -1,4 +1,13 @@
 # Release Notes
+## 2.1.12~ynh2
+Bugfix release.
+
+- Fix the failing of the removal script when the installation aborted with an error.
+
+  This could easily happen, if a previous installation of another Radical YunoHost app left some residues, e.g.
+  a nginx configuration.
+- use more of YunoHost's provided commands instead of manually doing things  
+
 ## 2.1.12~ynh1
 Initial release. Notable changes from [kitoy30/radicale2_ynh](https://github.com/kitoy30/radicale2_ynh) release are:
 
