@@ -51,14 +51,7 @@ ynh_secure_remove "/home/$app"
 # REMOVE THE NGINX CONFIGURATION
 #=================================================
 ynh_print_info "Removing nginx web server configuration"
-ynh_remove_nginx_config	# Suppression de la configuration nginx
-
-#=================================================
-# REMOVE THE LOGROTATE CONFIG
-#=================================================
-ynh_print_info "Removing logrotate configuration"
-ynh_remove_logrotate	# Suppression de la configuration de logrotate
-ynh_secure_remove "/var/log/$app"
+ynh_remove_nginx_config
 
 #=================================================
 # SPECIFIC REMOVE
