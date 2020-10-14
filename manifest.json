@@ -3,8 +3,8 @@
   "id": "radicale_jh",
   "packaging_format": 1,
   "description": {
-    "en": "CalDAV (calendar) and CardDAV (contact) synchronization server (https://github.com/jhunovis/radicale_jh_ynh)",
-    "fr": "Serveur de synchronisation CalDAV et CardDAV (https://github.com/jhunovis/radicale_jh_ynh)"
+    "en": "CalDAV (calendar) and CardDAV (contact) synchronization server",
+    "fr": "Serveur de synchronisation CalDAV et CardDAV"
   },
   "version": "2.1.12~ynh1",
   "url": "https://radicale.org",
