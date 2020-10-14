@@ -13,6 +13,7 @@ source /usr/share/yunohost/helpers
 #=================================================
 ynh_print_info "Loading installation settings ..."
 app=$YNH_APP_INSTANCE_NAME
+domain=$(ynh_app_setting_get "$app" domain) # Do not remove! It is implicitly used by YunoHost commands.
 
 #=================================================
 # STANDARD REMOVE
