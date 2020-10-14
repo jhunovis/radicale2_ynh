@@ -93,11 +93,11 @@ cp ../conf/config "$config_path"
 cp ../conf/logging "$config_path"
 cp ../conf/radicale.env "$config_path"
 
-ynh_replace_string "__FINAL_PATH__" "$final_path" "$config_path/radicale.env"
+ynh_replace_string "__FINALPATH__" "$final_path" "$config_path/radicale.env"
 ynh_replace_string "__PATH__" "${path_url%/}" "$config_path/config"
 ynh_replace_string "__DATA_USER__" "$data_user" "$config_path/config"
 ynh_replace_string "__CONFIG_PATH__" "$config_path" "$config_path/config"
-ynh_replace_string "__APP_ID__" "$app" "$config_path/logging"
+ynh_replace_string "__APP__" "$app" "$config_path/logging"
 
 ynh_store_file_checksum "$config_path/config"
 ynh_store_file_checksum "$config_path/logging"
@@ -109,14 +109,8 @@ chown root: -R "$final_path"
 #=================================================
 # SETUP SYSTEMD
 #=================================================
-systemd_config_file="/etc/systemd/system/$app.service"
-ynh_print_info "Configuring a systemd service $systemd_config_file"
-ynh_add_systemd_config
-ynh_replace_string "__FINAL_PATH__" "$final_path" "$systemd_config_file"
-ynh_replace_string "__DATA_USER__" "$data_user" "$systemd_config_file"
-ynh_replace_string "__APP_ID__" "$app" "$systemd_config_file"
-ynh_replace_string "__CONFIG_PATH__" "$config_path" "$systemd_config_file"
-ynh_store_file_checksum "$systemd_config_file"
+ynh_print_info "Configuring a systemd service $app"
+ynh_add_systemd_config -v "data_user config_path"
 
 #=================================================
 # NGINX CONFIGURATION
