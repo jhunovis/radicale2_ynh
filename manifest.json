@@ -13,6 +13,9 @@
     "name": "jhunovis",
     "email": "jh-ynh@lunovis.eu"
   },
+  "requirements": {
+    "yunohost": ">= 3.5.0"
+  },
   "services": [
     "nginx"
   ],
