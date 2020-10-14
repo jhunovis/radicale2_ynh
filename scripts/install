@@ -83,10 +83,10 @@ ynh_print_info "Creating user data directory '${data_user}'..."
 mkdir -p "$data_user"
 chown -R "$app": "$data_user"
 ynh_app_setting_set "$app" data_user "$data_user"
+
 #=================================================
 # CONFIGURE RADICALE
 #=================================================
-#Configuration Radicale
 ynh_print_info "Writing configuration settings..."
 mkdir -p "$config_path"
 cp ../conf/config "$config_path"

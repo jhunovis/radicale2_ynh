@@ -11,7 +11,7 @@ source /usr/share/yunohost/helpers
 #=================================================
 # LOAD SETTINGS
 #=================================================
-ynh_print_info "Loading installation settings ..."
+ynh_print_info "Loading installation settings before deinstallation..."
 app=$YNH_APP_INSTANCE_NAME
 domain=$(ynh_app_setting_get "$app" domain) # Do not remove! It is implicitly used by YunoHost commands.
 
@@ -42,7 +42,7 @@ ynh_remove_app_dependencies
 # REMOVE THE MAIN DIR OF THE APP
 #=================================================
 ynh_print_info "Removing app main directory"
-ynh_secure_remove "/opt/yunohost/$app"	# Suppression du dossier de l'application
+ynh_secure_remove "/opt/yunohost/$app"
 
 ynh_print_info "Removing users data directory"
 ynh_secure_remove "/home/$app"
@@ -60,7 +60,6 @@ ynh_remove_nginx_config
 #=================================================
 ynh_print_info "Removing $app confiuration"
 ynh_secure_remove "/etc/$app"
-
 
 #=================================================
 # GENERIC FINALISATION
